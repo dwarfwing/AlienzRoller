@@ -1,0 +1,15 @@
+{
+	"name": "Alien RPG Year-Zero Die Roller",
+	"script": "AlienRPG.js",
+	"version": "1.0",
+	"previousversions": ["0.1"],
+	"description": "This is a Die Roller used for Alien RPG dice rolls. It is used in combination with the Alien RPG Character Sheet but can be used independently of each other.",
+	"authors": "Richard W",
+	"roll20userid": "8097845",
+	"useroptions": [],
+	"dependencies": [],
+	"modifies": {
+		"state.AlienRpg": "read,write"
+	  },
+	"conflicts": []
+}
