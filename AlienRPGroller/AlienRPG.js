@@ -12,16 +12,12 @@ var AlienRpg = AlienRpg || (function() {
         lastUpdate = 0,
         schemaVersion = 0.1,
         symbols = {
-            swords: '&#'+'9876;',
-            skull: '&#'+'128369;',
-            gearskull: '&#'+'128369;',
-            push: '&#'+'10150;',
             baseblank: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Base-Between.png?raw=true',
             basesuccess: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Base-Success.png?raw=true',
             stressblank: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Stress-Between.png?raw=true',
             stresssuccess: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Stress-Success.png?raw=true',
-            stressfail: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Stress-Fail.png?raw=true'
-
+            stressfail: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Stress-Fail.png?raw=true',
+            push: '&#'+'10150;'
         },
         ArpgBackground = 'https://s3.amazonaws.com/files.d20.io/images/83147486/YCuEWUzaudOcg2mNHbiFCw/max.png?1559667169',
         colors = {
@@ -29,44 +25,15 @@ var AlienRpg = AlienRpg || (function() {
             background: 'rgba( 259 , 259 , 259 , 0.05 )',
             griditem: 'rgba(259, 259, 259, 0.05)',
             border: '#404040',
-            green: '#3ea62a',
-            lightGreen: '#89D878',
             yellow: '#ffe600',
-            lightYellow: '#FFF699',
             black: '#1d1d1d',
-            lightBlack: '#8F8E8E',
             white: '#F1F1F1',
             bone: '#F7F5F0',
-            burgundy: '#800000',
-            orange: '#f28500',
-            moss: '#6b9f00',
-            lightBlue: '#14b6eb',
+            burgundy: '#cc4c33',
             red: '#a63e2a'
         },
         defaults = {
-            css: {                
-                arpgMessageRow: {
-                    'font-family':'Helvetica, Arial, sans-serif',
-                    'font-size': '1rem',
-                    'color': '#F1F1F1',
-                    'border': '.1em solid #404040',
-                    'border-radius': '0.5em',
-                    'background-color': 'rgba(259, 259, 259, 0.05)',
-                    'margin': '0.2em',
-                    'padding': '0.2em',
-                    'overflow': 'hidden'
-                },
-                arpgButton: {
-                    'font-family':'Helvetica, Arial, sans-serif',
-                    'border': '1px solid #cccccc',
-                    'border-radius': '1em',
-                    'background-color': '#006dcc',
-                    'margin': '0 .1em',
-                    'font-weight': 'bold',
-                    'padding': '.1em .4em',
-                    'color': 'white',
-                    'font-size':'1.5rem'
-                },
+            css: {     
                 button: {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'border': '1px solid #cccccc',
@@ -135,7 +102,6 @@ var AlienRpg = AlienRpg || (function() {
                 },
                 arpgMsgLabelContainer: {
                     'font-family':'Helvetica, Arial, sans-serif',
-                    //'max-width': '12em',
                     'float': 'left',
                     'font-size': '1.5rem',
                     'margin-right': '.4em',
@@ -146,7 +112,6 @@ var AlienRpg = AlienRpg || (function() {
                 },
                 arpgMsgResultContainer: {
                     'font-family':'Helvetica, Arial, sans-serif',
-                    //'max-width': '12em',
                     'float': 'left',
                     'font-size': '1.2rem',
                     'margin-right': '.4em',
@@ -158,7 +123,6 @@ var AlienRpg = AlienRpg || (function() {
                 },
                 arpgMsgPushContainer: {
                     'font-family':'Helvetica, Arial, sans-serif',
-                    //'max-width': '12em',
                     'float': 'left',
                     'font-size': '1.2rem',
                     'margin-right': '.4em',
@@ -180,15 +144,6 @@ var AlienRpg = AlienRpg || (function() {
                     'margin':'-0.4em -0.4em .4em 0em',
                     'float': 'left',
                     'width':'10%'
-                },
-                arpgMsgDiceContainer: {
-                    'font-family':'Helvetica, Arial, sans-serif',
-                    'max-width': '10em',
-                    'float': 'right',
-                    'font-size': '1rem',
-                    'margin-right': '.2em',
-                    'vertical-align':'top',
-                    'display':'flex'
                 },
                 arpgMsgLabel: {
                     'font-family':'Helvetica, Arial, sans-serif',
@@ -226,9 +181,6 @@ var AlienRpg = AlienRpg || (function() {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'font-size':'1.25em',
                     'display': 'inline-block',
-                    //'border': '1px solid black',
-                    //'border-radius': '.3em',
-                    //'padding': '.2em 0 0 0',
                     'text-align': 'center',
                     'width': '1.7em',
                     'height': '1.7em',
@@ -1060,7 +1012,7 @@ var AlienRpg = AlienRpg || (function() {
                         makeRerollExpression(stressDiceArray,'6')+
                         (optionalStr ? optionalStr : ''),
                         ' Push '+symbols.push+' '+ ((pushes > 0) ? pushes : ' &nbsp; '),
-                        (pushes < 1) ? colors.background : ((pushes > 1) ? colors.red : colors.burgundy)
+                        (pushes < 1) ? colors.background : ((pushes > 1) ? colors.burgundy : colors.red)
                     ) :
                     ''
                 );
