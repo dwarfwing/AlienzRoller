@@ -235,13 +235,11 @@ var AlienRpg = AlienRpg || (function() {
         );
 
         templates.button = _.template(
-            '<div <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgMsgPushContainer}) %>>'+
                 '<a <%= templates.style({'+
                     'defaults: defaults,'+
                     'templates: templates,'+
                     'css: _.defaults(css,defaults.css.arpgPushLabel)'+
-                    '}) %> href="<%= command %>"><%= label||"Button" %></a>'+
-            '</div>'
+                    '}) %> href="<%= command %>"><%= label||"Button" %></a>'
         );
 
         templates.errorMsg = _.template(
