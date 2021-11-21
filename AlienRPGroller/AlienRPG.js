@@ -1,16 +1,14 @@
 // Github: TBD
-// By:       Dwarfwing, Richard
-// Based on: MutantYearZero by:
-//// Github:   https://github.com/shdwjk/Roll20API/blob/master/AlienRpg/AlienRpg.js
-//// By:       The Aaron, Arcane Scriptomancer
-//// Contact:  https://app.roll20.net/users/104025/the-aaron
+// By: Richard Dwarfwing
+// Contact: https://app.roll20.net/users/8097845/richard-w
+// Based on: MutantYearZero by The Aaron, Arcane Scriptomancer
 
 var AlienRpg = AlienRpg || (function() {
     'use strict';
 
-    var version = '0.0.1',
-        lastUpdate = 0,
-        schemaVersion = 0.1,
+    var version = '1.0.0',
+        lastUpdate = 1637505563,
+        schemaVersion = 1.0,
         symbols = {
             baseblank: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Base-Between.png?raw=true',
             basesuccess: 'https://github.com/Roll20/roll20-character-sheets/blob/master/Alien%20Roleplaying%20Game/Images/Base-Success.png?raw=true',
@@ -85,6 +83,15 @@ var AlienRpg = AlienRpg || (function() {
                     'border-radius': '.5em',
                     'margin': '.1em .4em 0.1em .2em'
                 },
+                optionalMsgText: {
+                    'font-family':'Helvetica, Arial, sans-serif',
+                    'color': '#F1F1F1',
+                    'display': 'inline-block',
+                    'padding': '0 .6em .1em .4em',
+                    'border-radius': '.5em',
+                    'margin': '.1em .4em 0.1em .2em',
+                    'height': '20px'
+                },
                 arpgMsg: {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'font-size': '1rem',
@@ -110,28 +117,6 @@ var AlienRpg = AlienRpg || (function() {
                     'width':'100%',
                     'display':'flex'
                 },
-                arpgMsgResultContainer: {
-                    'font-family':'Helvetica, Arial, sans-serif',
-                    'float': 'left',
-                    'font-size': '1.2rem',
-                    'margin-right': '.4em',
-                    'min-width':'85px',
-                    'vertical-align':'top',
-                    'display':'inline-block',
-                    'width':'100%',
-                    'text-align':'center'
-                },
-                arpgMsgPushContainer: {
-                    'font-family':'Helvetica, Arial, sans-serif',
-                    'float': 'left',
-                    'font-size': '1.2rem',
-                    'margin-right': '.4em',
-                    'min-width':'85px',
-                    'vertical-align':'top',
-                    'display':'inline-block',
-                    'width':'100%',
-                    'text-align':'center'
-                },
                 arpgMsgHeaderContainer: {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'font-weight': 'bold',
@@ -154,6 +139,17 @@ var AlienRpg = AlienRpg || (function() {
                     'margin-bottom': '.1em',
                     'text-align': 'center',
                 },
+                arpgMsgResultContainer: {
+                    'font-family':'Helvetica, Arial, sans-serif',
+                    'float': 'left',
+                    'font-size': '1.2rem',
+                    'margin-right': '.4em',
+                    'min-width':'85px',
+                    'vertical-align':'top',
+                    'display':'inline-block',
+                    'width':'100%',
+                    'text-align':'center'
+                },
                 arpgResultLabel: {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'border': '.1em solid #404040',
@@ -162,20 +158,42 @@ var AlienRpg = AlienRpg || (function() {
                     'padding': '.1em',
                     'margin-bottom': '.1em',
                     'text-align': 'center',
-                    'width':'47%',
+                    'width':'45%',
                     'margin-right':'0',
-                    'margin-left':'0',
+                    'margin-left':'0.2em',
+                    'margin-right':'0.2em',
                     'display':'inline-block'
+                },
+                arpgMsgPushContainer: {
+                    'font-family':'Helvetica, Arial, sans-serif',
+                    'float': 'left',
+                    'font-size': '1.2rem',
+                    'margin-right': '.4em',
+                    'min-width':'85px',
+                    'vertical-align':'top',
+                    'display':'inline-block',
+                    'width':'100%',
+                    'text-align':'center'
                 },
                 arpgPushLabel: {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'border': '.1em solid #404040',
                     'border-radius': '.25em',
                     'font-weight': 'normal',
-                    'padding': '.1em',
-                    'margin-bottom': '.1em',
+                    'padding': '.2em',
+                    'margin': '.2em .2em .1em .2em',
                     'text-align': 'center',
-                    'width':'100%'
+                    'width':'95%'
+                },
+                arpgMsgDiceContainer: {
+                    'font-family':'Helvetica, Arial, sans-serif',
+                    'float': 'left',
+                    'font-size': '1.5rem',
+                    'padding': '.3em',
+                    'min-width':'85px',
+                    'vertical-align':'top',
+                    'width':'100%',
+                    'display':'flex'
                 },
                 arpgDie: {
                     'font-family':'Helvetica, Arial, sans-serif',
@@ -217,7 +235,7 @@ var AlienRpg = AlienRpg || (function() {
         );
 
         templates.button = _.template(
-            '<div <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgPushContainer}) %>>'+
+            '<div <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgMsgPushContainer}) %>>'+
                 '<a <%= templates.style({'+
                     'defaults: defaults,'+
                     'templates: templates,'+
@@ -241,7 +259,9 @@ var AlienRpg = AlienRpg || (function() {
                         '<%= label %>'+
                     '</div>'+
                 '<% } %>'+
-                '<%= text %>'+
+                '<div <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.optionalMsgText}) %>>'+
+                    '<%= text %>'+
+                '</div>'+
             '</div>'
         );
 
@@ -273,8 +293,8 @@ var AlienRpg = AlienRpg || (function() {
                 '<div class="api-alienrpg-info" <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgMsgLabelContainer}) %>>'+
                     '<%= info %>'+
                 '</div>'+
-                // COntainer with dice images              
-                '<div class="api-alienrpg-dice" <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgMsgLabelContainer}) %>>'+
+                // Container with dice images              
+                '<div class="api-alienrpg-dice" <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgMsgDiceContainer}) %>>'+
                     '<%= diceImages %>'+ 
                 '</div>'+
                 // Results
@@ -376,7 +396,7 @@ var AlienRpg = AlienRpg || (function() {
     },
 
     checkInstall = function() {
-        log('-=> AlienRpg v'+version+' <=-  ['+(new Date(lastUpdate*1000))+']');
+        log('-=> Alien Rpg Dice Roller v'+version+' <=-  ['+(new Date(lastUpdate*1000))+']');
 
         if( ! _.has(state,'AlienRpg') || state.AlienRpg.version !== schemaVersion) {
             log('  > Updating Schema to v'+schemaVersion+' <');
@@ -490,7 +510,7 @@ var AlienRpg = AlienRpg || (function() {
     getConfigOption_GMCanPush = function() {
         return makeConfigOption(
             state.AlienRpg.config.gmCanPush,
-            '!arpg-config --toggle-gm-can-push',
+            '!alienr-config --toggle-gm-can-push',
             '<b>GM Can Push</b> determines if the GM is allowed to push a player'+ch("'")+' roll.'
         );
     },
@@ -499,7 +519,7 @@ var AlienRpg = AlienRpg || (function() {
         return makeConfigOptionSelection(
             state.AlienRpg.config.reportMode,
             reportingModes,
-            '!arpg-config --set-report-mode',
+            '!alienr-config --set-report-mode',
             '<b>Report Mode</b> determines when and how invalid push attempts are reported.'
         );
     },
@@ -514,18 +534,18 @@ var AlienRpg = AlienRpg || (function() {
         sendChat('','/w "'+who+'" '+
         '<div style="border: 1px solid black; background-color: rgba(204, 217, 207, 1); padding: 3px 3px; color: rgba(0, 139, 139, 1);">'+
             '<div style="font-weight: bold; border-bottom: 1px solid black;font-size: 130%; background-color: black; padding: 4px;">'+
-                'AlienRpg v'+version+
+                'Alien RPG Dice Roller v'+version+
             '</div>'+
             '<div style="padding-left:10px;margin-bottom:3px;">'+
-                '<p>AlienRpg script automates the rolling of Base and Stress dice using Alien RPG dice mechanics.</p>'+
+                '<p>AlienR script automates the rolling of Base and Stress dice using Alien RPG dice mechanics.</p>'+
             '</div>'+
             '<b>Commands</b>'+
             '<div style="padding-left:10px;">'+
                 '<div style="padding-left: 0;padding-right:20px; font-family: Courier new,sans-serif;"><b>'+
-                '!arpg</b></div>'+
+                '!alienr</b></div>'+
                 '<div style="padding-left: 10px;padding-right:20px;">Performs an Alien RPG Roll.</div>'+
                 '<pre style="white-space:normal;word-break:normal;word-wrap:normal;"><b><span style="font-family: Courier new, monospace;">'+
-                '!arpg '+ch('<')+ch('[')+'Roll name'+ch(']')+ch('>')+' '+ch('[')+ch('[')+'Base Dice'+ch(']')+ch(']')+' '+ch('[')+ch('[')+'Stress Dice'+ch(']')+ch(']')+' '+ch('<')+'--Label'+ch('|')+'Message'+ch('>')+' ...'+ch('>')+'</span></b></pre>'+
+                '!alienr '+ch('<')+ch('[')+'Roll name'+ch(']')+ch('>')+' '+ch('[')+ch('[')+'Base Dice'+ch(']')+ch(']')+' '+ch('[')+ch('[')+'Stress Dice'+ch(']')+ch(']')+' '+ch('<')+'--Label'+ch('|')+'Message'+ch('>')+' ...'+ch('>')+'</span></b></pre>'+
                 '<div style="padding-left: 10px;padding-right:20px">'+
                     '<ul>'+
                         '<li style="border-top: 1px solid #ccc;border-bottom: 1px solid #ccc; color: rgba(0, 139, 139, 1);">'+
@@ -545,19 +565,19 @@ var AlienRpg = AlienRpg || (function() {
                     '<div style="padding-left: 10px;padding-right:20px">'+
                         '<p>Example:</p>'+        
                         '<pre style="white-space:normal;word-break:normal;word-wrap:normal;">'+
-                            '!arpg '+ch('[')+'Heavy Machinery'+ch(']')+' '+ch('[')+ch('[')+'5d6'+ch(']')+ch(']')+' '+ch('[')+ch('[')+'3d6'+ch(']')+ch(']')+' --Player|Ellen Ripley --Talent|Spaceship Machanic'+
+                            '!alienr '+ch('[')+'Heavy Machinery'+ch(']')+' '+ch('[')+ch('[')+'5d6'+ch(']')+ch(']')+' '+ch('[')+ch('[')+'3d6'+ch(']')+ch(']')+' --Player|Ellen Ripley --Talent|Spaceship Machanic'+
                         '</pre>'+
                     '</div>'+
                 '</div>'+
             '</div>'+
             '<div style="padding-left:10px;">'+
                 '<div style="padding-left: 0;padding-right:20px; font-family: Courier new,sans-serif;"><b>'+
-                '!warpg</b></div>'+
+                '!alienrw</b></div>'+
                 '<div style="padding-left: 10px;padding-right:20px;">Performs a whispered Alien RPG Roll.</div>'+
                 '<pre style="white-space:normal;word-break:normal;word-wrap:normal;"><b><span style="font-family: Courier new, monospace;">'+
-                '!warpg '+ch('<')+ch('[')+'Roll name'+ch(']')+ch('>')+' '+ch('[')+ch('[')+'Base Dice'+ch(']')+ch(']')+' '+ch('[')+ch('[')+'Stress Dice'+ch(']')+ch(']')+'</span></b></pre>'+
+                '!alienrw '+ch('<')+ch('[')+'Roll name'+ch(']')+ch('>')+' '+ch('[')+ch('[')+'Base Dice'+ch(']')+ch(']')+' '+ch('[')+ch('[')+'Stress Dice'+ch(']')+ch(']')+'</span></b></pre>'+
                 '<div style="padding-left: 10px;padding-right:20px">'+
-                    '<p>Identical to <span style="font-family: Courier new, sans-serif;">!arpg</span> except that the results are whispered to the player rolling and the GM.</p>'+
+                    '<p>Identical to <span style="font-family: Courier new, sans-serif;">!alienr</span> except that the results are whispered to the player rolling and the GM.</p>'+
                 '</div>'+
             '</div>'+
             ( playerIsGM(playerid) ?
@@ -633,7 +653,7 @@ var AlienRpg = AlienRpg || (function() {
         }
         return {
             success: 0,
-            stress: 0,
+            panic: 0,
             pushes: 0
         };
     },
@@ -735,7 +755,7 @@ var AlienRpg = AlienRpg || (function() {
             case 'gm':
                 if(playerIsGM(playerid)){
                     sendChat('','/w gm '+
-                        makeErrorMsg('Cannot Push '+owner.get('displayname')+ch("'")+'s roll because <b>GM Can Push</b> is not enabled.  See '+makeButton('!arpg-config','Configuration')+' for details.')
+                        makeErrorMsg('Cannot Push '+owner.get('displayname')+ch("'")+'s roll because <b>GM Can Push</b> is not enabled.  See '+makeButton('!alienr-config','Configuration')+' for details.')
                     );
                 } else {
                     sendChat('','/w gm '+makeErrorMsg(player.get('displayname')+' attempted to Push '+owner.get('displayname')+ch("'")+'s roll.'));
@@ -765,14 +785,14 @@ var AlienRpg = AlienRpg || (function() {
             stressDiceArray,
 
             successes=0,
-            stress=0,
+            panic=0,
             pushedValues,
             pushes=0,
             pushingValues,
 
             push=false,
             pushButton,
-            w=false,
+            whisper=false,
             cmd,
             hash,
             matches,
@@ -860,15 +880,15 @@ var AlienRpg = AlienRpg || (function() {
             //log('Command: '+JSON.stringify(cmd));
             //log('Args: '+JSON.stringify(args));
             //log('Content: '+JSON.stringify(msg.content));
-            //log('Header1: '+JSON.stringify((msg.content).match(/^(\!w?arpg)(\s*)(\[.*\])/)[0]));
-            //log('Header3: '+JSON.stringify((msg.content).match(/^(\!w?arpg)(\s*)(\[.*\])/)[3]));
+            //log('Header1: '+JSON.stringify((msg.content).match(/^(\!w?alienr)(\s*)(\[.*\])/)[0]));
+            //log('Header3: '+JSON.stringify((msg.content).match(/^(\!w?alienr)(\s*)(\[.*\])/)[3]));
 
 
         cmd=args.shift();
         matches=cmd.match(/^(!\S+)\[([^\]]+)\]/);
             //matches=cmd.match(/^(!\S+)(.*)\[([^\]]+)\]/);
             //log("Regex matches: "+ JSON.stringify(rollname));
-        rollname=msg.content.split(/^(\!w?arpg(\[\d+\])?)(\s+)\[(.*)\]/);
+        rollname=msg.content.split(/^(\!alienrw?(\[\d+\])?)(\s+)\[(.*)\]/);
             //log("Regex rollname: "+ JSON.stringify(rollname));
             //log("Regex rollname length: "+ JSON.stringify(rollname.length));
         rollname = !rollname ? "" : (!rollname[rollname.length-2] ? "" : rollname[rollname.length-2]);
@@ -884,12 +904,12 @@ var AlienRpg = AlienRpg || (function() {
             //log('Hash: '+hash);
 
         switch(cmd) {
-            case '!warpg':
-                w=true;
+            case '!alienrw':
+                whisper=true;
                 /* break; */ // Intentional drop through
                 /* falls through */
 
-            case '!arpg':
+            case '!alienr':
                 if( 0 === args.length || _.contains(args,'--help')) {
                     showHelp(msg.playerid);
                     return;
@@ -949,14 +969,14 @@ var AlienRpg = AlienRpg || (function() {
                 }
                 pushedValues=getCountsForRoll(owner,hash);
                     //log("Pushed value success : "+ JSON.stringify(pushedValues.success));
-                    //log("Pushed value stress : "+ JSON.stringify(pushedValues.stress));
+                    //log("Pushed value panic : "+ JSON.stringify(pushedValues.panic));
                     //log("Pushed value pushes: "+ JSON.stringify(pushedValues.pushes));
 
                     //log("Stress dice : "+ JSON.stringify(stressDice));
                     //log("Base dice : "+ JSON.stringify(baseDice));
 
                 successes=pushedValues.success + (baseDice['6']||0) + (stressDice['6']||0);
-                stress=pushedValues.stress + (stressDice['1']||0);
+                panic=pushedValues.panic + (stressDice['1']||0);
                 pushes=pushedValues.pushes||0; 
 
                 optional = (optional.length && optional) || getOptionalForRoll(owner,hash);
@@ -993,7 +1013,7 @@ var AlienRpg = AlienRpg || (function() {
                         },
                         counts: {
                             success: successes,
-                            stress: stress,
+                            panic: panic,
                             pushes: (pushes+1)
                         },
                         optional: optional
@@ -1005,8 +1025,7 @@ var AlienRpg = AlienRpg || (function() {
                 pushButton = (_.reduce([baseDiceArray,stressDiceArray],
                     function(m,dice){ return m+getRollableDiceCount(dice);},0) ?
                     makeButton(
-                        '!'+(w?'w':'')+'arpg['+hash+'] '+
-                        //(roller ? '['+roller+'] ' : '')+
+                        '!alienr'+(whisper?'w':'')+'['+hash+'] '+
                         (rollname ? '['+rollname+']' : '')+
                         makeRerollExpression(baseDiceArray,'6')+
                         makeRerollExpression(stressDiceArray,'6')+
@@ -1028,7 +1047,7 @@ var AlienRpg = AlienRpg || (function() {
                     ].join(''),
                     [
                         makeResult( 'Success: '+successes+' ', colors.background, colors.bone),
-                        makeResult( 'Stress:  '+ stress+' ', colors.background, colors.bone),
+                        makeResult( 'Panic:  '+panic+' ', colors.background, colors.bone),
                     ].join(''),
                     [
                         pushButton,
@@ -1040,7 +1059,7 @@ var AlienRpg = AlienRpg || (function() {
 
                 // Based on the chat settings, send chat message whispered or not 
                 who=getObj('player',owner).get('displayname');
-                if(w){
+                if(whisper){
                     sendChat(msg.who, '/w gm '+output);
                     if(!playerIsGM(owner)){
                         sendChat(who, '/w "'+who+'" '+output);
@@ -1052,7 +1071,7 @@ var AlienRpg = AlienRpg || (function() {
                 break;
 
             // Display only the configuration part, without including the help section
-            case '!arpg-config':
+            case '!alienr-config':
                 if(!playerIsGM(msg.playerid)){
                     return;
                 }
