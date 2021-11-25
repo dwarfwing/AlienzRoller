@@ -870,7 +870,8 @@ var AlienRpg = AlienRpg || (function() {
             var s=o.split(/\|/),
                 k=s.shift();
                 s=s.join('|');
-                if ( k == "runas" ) { runas = s; }
+                if ( k === "runas" ) { runas = s; }
+                if ( s === "" ) { s = "&nbsp;"; }
                 return {
                     label: k,
                     msg: s
