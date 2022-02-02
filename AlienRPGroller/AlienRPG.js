@@ -164,6 +164,20 @@ var AlienRpg = AlienRpg || (function() {
                     'margin-right':'0.2em',
                     'display':'inline-block'
                 },
+                arpgResultLabelThird: {
+                    'font-family':'Helvetica, Arial, sans-serif',
+                    'border': '.1em solid #404040',
+                    'border-radius': '.25em',
+                    'font-weight': 'normal',
+                    'padding': '.1em',
+                    'margin-bottom': '.1em',
+                    'text-align': 'center',
+                    'width':'25%',
+                    'margin-right':'0',
+                    'margin-left':'0.2em',
+                    'margin-right':'0.2em',
+                    'display':'inline-block'
+                },
                 arpgMsgPushContainer: {
                     'font-family':'Helvetica, Arial, sans-serif',
                     'float': 'left',
@@ -280,6 +294,11 @@ var AlienRpg = AlienRpg || (function() {
                 '<%= resultText %>'+
             '</span>'
         );
+        templates.outputResultPush = _.template(
+            '<span <%= templates.style({defaults: defaults,templates: templates,css: _.defaults(css,defaults.css.arpgResultLabelThird)}) %> >'+
+                '<%= resultText %>'+
+            '</span>'
+        );
 
         templates.output = _.template(
             '<div class="api-alienrpg-message" <%= templates.style({defaults: defaults,templates: templates,css: defaults.css.arpgMsg}) %> >'+
@@ -351,10 +370,20 @@ var AlienRpg = AlienRpg || (function() {
             });
         }
     },    
-    makeResult = function(text, backgroundColor, color){
+    makeResult = function(text, backgroundColor, color, push) {
         if ( text == "") {
             return '';
-        } else {
+        } else if ( push === 1 ) {
+            return templates.outputResultPush({
+                resultText: text,
+                templates: templates,
+                defaults: defaults,
+                css: {
+                    color: color,
+                    'background-color': backgroundColor
+                }
+            });
+        } else {            
             return templates.outputResult({
                 resultText: text,
                 templates: templates,
@@ -391,6 +420,35 @@ var AlienRpg = AlienRpg || (function() {
                 'background-color': backgroundColor
             }
         });
+    },
+    makePushButton = function(baseDiceArray, stressDiceArray, hash, whisper, rollname, optionalStr, pushes) {
+        return (_.reduce([baseDiceArray,stressDiceArray],
+        function(m,dice){ return m+getRollableDiceCount(dice);},0) ?
+        makeButton(
+            '!alienr'+(whisper?'w':'')+'['+hash+'] '+
+            (rollname ? '['+rollname+']' : '')+
+            makeRerollExpression(baseDiceArray,'6', 0)+
+            makeRerollExpression(stressDiceArray,'6', 1)+
+            (optionalStr ? optionalStr : ''),
+            ' Push '+symbols.push+' '+ ((pushes > 0) ? '(Stress +'+pushes+')' : ' &nbsp; '),
+            (pushes < 1) ? colors.background : ((pushes > 1) ? colors.burgundy : colors.red)
+        ) :
+        ''
+    )},
+    makeResultLabels = function(successes, panic, push) {
+        if ( push > 0) {
+            return [
+                makeResult( 'Success: <br />'+successes+' ', colors.background, colors.bone, 1),
+                makeResult( 'Panic:  <br />'+panic+' ', colors.background, colors.bone, 1),
+                makeResult( 'Stress:  <br />+'+push+' ', colors.background, colors.bone, 1),
+            ].join('');
+        } else {
+            return [
+                makeResult( 'Success: '+successes+' ', colors.background, colors.bone, 0),
+                makeResult( 'Panic:  '+panic+' ', colors.background, colors.bone, 0),
+            ].join('');
+        }
+
     },
 
     checkInstall = function() {
@@ -629,12 +687,27 @@ var AlienRpg = AlienRpg || (function() {
             });
         }).reverse().join('');
     },
+    makePushedDiceImages = function(dice,face,bgcolor,color) {
+        bgcolor=bgcolor||'black';
+        color=color||'white';
+        return _.map(_.range(dice),function(r){
+            return templates.die({
+                text: face,
+                templates:templates,
+                defaults:defaults,
+                css: {
+                    'background-color': bgcolor,
+                    'color': color
+                }
+            });
+        }).reverse().join('');
+    },
     getRollableDiceCount = function(dice){
         return _.filter(dice,function(v){return (v+'').match(/^\<img class=\"blank\"/);}).length; // <img class="blank"
         // return _.filter(dice,function(v){return (v+'').match(/^\d+$/);}).length; 
     },
-    makeRerollExpression = function(dice,sides){
-        var cnt = getRollableDiceCount(dice);
+    makeRerollExpression = function(dice,sides,mod){
+        var cnt = getRollableDiceCount(dice)+(mod||0);
         return ' '+ch('[')+ch('[')+cnt+'d'+sides+ch(']')+ch(']')+' ';
     }, 
 
@@ -642,7 +715,7 @@ var AlienRpg = AlienRpg || (function() {
         var obj=state.AlienRpg.playerRolls[playerid];
         return (obj && obj.hash === hash &&
             obj.dice.baseDice === base &&
-            obj.dice.stressDice === stress 
+            obj.dice.stressDice === stress   // Plus 1 because pushing increases stress by one.
         );
     },
     getCountsForRoll = function(playerid,hash){
@@ -652,7 +725,10 @@ var AlienRpg = AlienRpg || (function() {
         return {
             success: 0,
             panic: 0,
-            pushes: 0
+            pushes: 0,
+            basesuccesses: 0,
+            stresssuccesses: 0,
+            stressfails: 0
         };
     },
     getOptionalForRoll = function(playerid,hash){
@@ -765,6 +841,53 @@ var AlienRpg = AlienRpg || (function() {
         }
     },
 
+    updateCharacterStress = function(name,count) {
+        var char = {};
+        char = (findObjs({_type: 'character', name: name}))[0] || ""; 
+
+        if (char === "") {
+            log("Tried updating stress but character not found."); 
+            return; 
+        }
+        log("Character info: "+JSON.stringify(char) +" with id "+ char.get("_id"));
+        const attrStressCheckboxes = Array(10).fill().map((_, index) => `stress_${index +1}`);
+        //const attributeStrs = ["stress"].concat(variableAttributeChecks);
+        var attributeObj = [], attributeVal = 0;
+        _.find(attrStressCheckboxes, (attr) => {
+            //attributeObj.push( findObjs({_type: "attribute", name: attr, _characterid: char.get("_id")}) );
+            attributeObj = findObjs({_type: "attribute", name: attr, _characterid: char.get("_id")});
+            log("Attribute collected is : "+JSON.stringify(attributeObj));
+            attributeVal = parseInt( attributeObj[0].get("current") );
+            log("Attribute value is : "+attributeVal);
+            if ( attributeVal === 0 ) {
+                attributeObj[0].set("current", 1);
+                log("Attribute new value is updated to 1");
+                return true;
+            } else return false;
+            /* if ( parseInt(attributeObj.get("current")) === 0 ) {
+                log("Stress "+attr+" is 0");
+            } else if ( parseInt(attributeObj.get("current")) === 1 ) {
+                log("Stress "+attr+" is 0");
+            } else {
+                log("Stress "+attr+" is "+parseInt(attributeObj.get("current")));
+            } */
+        });
+        attributeObj = findObjs({_type: "attribute", name: "stress", _characterid: char.get("_id")});
+        //var char_stress = getAttrByName(char.get("_id"), "stress")[0];
+        log("Character stress 0: "+ JSON.stringify(attributeObj[0]));
+        log("Character stress 1: "+ JSON.stringify(attributeObj[1]));
+        log("Character stress 2: "+ JSON.stringify(attributeObj[2]));
+        log("Character stress 3: "+ JSON.stringify(attributeObj[3]));
+        _.each()
+        let newval = parseInt( (attributeObj[0]).get("current") )+count;
+        attributeObj[0].set("current", newval);
+        //log("Character stress 1: "+ JSON.stringify(attributeObj[0].get("current")));
+        //log("Character stress_1: "+ JSON.stringify(attributeObj[1].get("current")));
+        attributeObj = findObjs({_type: "attribute", name: "stress", _characterid: char.get("_id")});
+        //var char_stress = getAttrByName(char.get("_id"), "stress")[0];
+        log("Character stress post: "+ JSON.stringify(attributeObj[0].get("current")));
+    },
+
 
     handleInput = function(msg_orig) {
         var msg = _.clone(msg_orig),
@@ -782,15 +905,20 @@ var AlienRpg = AlienRpg || (function() {
 
             baseDiceArray,
             stressDiceArray,
+            pushedBaseSuccessArray,
+            pushedStressSuccessArray,
+            pushedStressFailArray,
 
             successes=0,
             panic=0,
+            basesuccesses=0,
+            stresssuccesses=0,
+            stressfails=0,
             pushedValues,
             pushes=0,
             pushingValues,
 
             push=false,
-            pushButton,
             whisper=false,
             cmd,
             hash,
@@ -855,7 +983,8 @@ var AlienRpg = AlienRpg || (function() {
 				.value();
         }
             //log('Roll indices: '+JSON.stringify(rollIndices));
-
+        let whoami=(getObj('player',msg.playerid));
+        log("Who am i: "+JSON.stringify(whoami));
         who=(getObj('player',msg.playerid)||{get:()=>'API'}).get('_displayname');
 
         // Getting the optional items from command
@@ -892,6 +1021,7 @@ var AlienRpg = AlienRpg || (function() {
         //log('Getting Optional w/o runas: '+JSON.stringify(optional));        
         // In case of Runas impersonation, i.e. when running command to be listed as someone else. Will be used in character sheet. 
         roller = runas ? runas : roller;  
+        
 
         cmd=args.shift();
         matches=cmd.match(/^(!\S+)\[([^\]]+)\]/);
@@ -969,48 +1099,68 @@ var AlienRpg = AlienRpg || (function() {
                     (
                         _.has(state.AlienRpg.playerRolls,owner) &&
                         ( hash === state.AlienRpg.playerRolls[owner].hash)
-                    ) &&
-                    !validatePlayerRollHash(owner,hash,
-                        getDiceArray(baseDice).length,
-                        getDiceArray(stressDice).length
-                    )
-                ){
-                    reportBadPushCounts(msg.playerid);
-                    return;
+                        ) &&
+                        !validatePlayerRollHash(owner,hash,
+                            getDiceArray(baseDice).length,
+                            getDiceArray(stressDice).length-1
+                        )
+                    ){
+                        reportBadPushCounts(msg.playerid);
+                        return;
+                }
+                if(push && runas) {
+                    updateCharacterStress(runas,1);
                 }
                 pushedValues=getCountsForRoll(owner,hash);
-                    //log("Pushed value success : "+ JSON.stringify(pushedValues.success));
+                    log("Pushed values : "+ JSON.stringify(pushedValues));
                     //log("Pushed value panic : "+ JSON.stringify(pushedValues.panic));
                     //log("Pushed value pushes: "+ JSON.stringify(pushedValues.pushes));
 
                     //log("Stress dice : "+ JSON.stringify(stressDice));
                     //log("Base dice : "+ JSON.stringify(baseDice));
 
+                // Push will add additional stress, increasing the stress die by one.
+
                 successes=pushedValues.success + (baseDice['6']||0) + (stressDice['6']||0);
                 panic=pushedValues.panic + (stressDice['1']||0);
                 pushes=pushedValues.pushes||0; 
+                basesuccesses=pushedValues.basesuccesses||0;
+                stresssuccesses=pushedValues.stresssuccesses||0;
+                stressfails=pushedValues.stressfails||0;
 
                 optional = (optional.length && optional) || getOptionalForRoll(owner,hash);
 
                 baseDiceArray=_.map(getDiceArray(baseDice),function(v){
                     switch(v){
                         case '6':
+                            basesuccesses++; 
                             return '<img class="success" src="'+symbols.basesuccess+'" />';
                         default:
                             return '<img class="blank" src="'+symbols.baseblank+'" />';
                             //return v; // For returning the value and showing the dice face value, i.e 1, 2, 3, 4, 5
                     }
                 });
+                pushedBaseSuccessArray = _.map(new Array(pushedValues.basesuccesses), (v) => {
+                    return '<img class="success" style="opacity: 0.6;" src="'+symbols.basesuccess+'" />';
+                });
                 stressDiceArray=_.map(getDiceArray(stressDice),function(v){
                     switch(v){
                         case '1':
+                            stressfails++;
                             return '<img class="panic" src="'+symbols.stressfail+'" />';
                         case '6':
+                            stresssuccesses++; 
                             return '<img class="success" src="'+symbols.stresssuccess+'" />';
                         default:
                             return '<img class="blank" src="'+symbols.stressblank+'" />';
                             //return v; // For returning the value and showing the dice face value, i.e 2, 3, 4, 5
                     }
+                });
+                pushedStressSuccessArray = _.map(new Array(pushedValues.stresssuccesses), (v) => {
+                    return '<img class="success" style="opacity: 0.8;" src="'+symbols.stresssuccess+'" />';
+                });
+                pushedStressFailArray = _.map(new Array(pushedValues.stressfails), (v) => {
+                    return '<img class="success" style="opacity: 0.8;" src="'+symbols.stressfail+'" />';
                 });
 
                // record push data
@@ -1025,42 +1175,38 @@ var AlienRpg = AlienRpg || (function() {
                         counts: {
                             success: successes,
                             panic: panic,
-                            pushes: (pushes+1)
+                            pushes: (pushes+1),
+                            basesuccesses: basesuccesses,
+                            stresssuccesses: stresssuccesses,
+                            stressfails: stressfails
                         },
                         optional: optional
                     };
-                //log("Pushing values: "+ JSON.stringify(pushingValues));
+                log("Pushing values: "+ JSON.stringify(pushingValues));
                 recordPlayerRollHash(owner,pushingValues);
                 
-                pushButton = (_.reduce([baseDiceArray,stressDiceArray],
-                    function(m,dice){ return m+getRollableDiceCount(dice);},0) ?
-                    makeButton(
-                        '!alienr'+(whisper?'w':'')+'['+hash+'] '+
-                        (rollname ? '['+rollname+']' : '')+
-                        makeRerollExpression(baseDiceArray,'6')+
-                        makeRerollExpression(stressDiceArray,'6')+
-                        (optionalStr ? optionalStr : ''),
-                        ' Push '+symbols.push+' '+ ((pushes > 0) ? pushes : ' &nbsp; '),
-                        (pushes < 1) ? colors.background : ((pushes > 1) ? colors.burgundy : colors.red)
-                    ) :
-                    ''
-                );
+
 
                 // Starting point to build the output, each function using one or more templates to format the output
+
                 output = makeOutput([
                         makeLabel(roller, colors.background, colors.white),
                         makeLabel(rollname, colors.background, colors.white),
                     ].join(''),
                     [
+                        makeDiceImages(pushedBaseSuccessArray,colors.transparent,colors.white),
                         makeDiceImages(baseDiceArray,colors.transparent, colors.white),
+                        makeDiceImages(pushedStressSuccessArray,colors.transparent,colors.black),
+                        makeDiceImages(pushedStressFailArray,colors.transparent,colors.black),
                         makeDiceImages(stressDiceArray,colors.transparent, colors.black),
                     ].join(''),
                     [
-                        makeResult( 'Success: '+successes+' ', colors.background, colors.bone),
-                        makeResult( 'Panic:  '+panic+' ', colors.background, colors.bone),
+                        makeResultLabels(successes, panic, pushedValues.pushes), 
+                        //makeResult( 'Success: '+successes+' ', colors.background, colors.bone),
+                        //makeResult( 'Panic:  '+panic+' ', colors.background, colors.bone),
                     ].join(''),
                     [
-                        pushButton,
+                        makePushButton(baseDiceArray,stressDiceArray, hash, whisper, rollname, optionalStr, pushes),
                     ].join(''),
                     [
                         makeOptionalText(optional)
